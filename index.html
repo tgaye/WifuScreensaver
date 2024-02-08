@@ -3,23 +3,50 @@
 <head>
     <title>Image Revealer</title>
     <style>
+        body {
+            background-color: black;
+            overflow: hidden; 
+        }
+
         #container {
-            position: relative;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 100vh;
-            height: 100vh;
-            margin: 0 auto; /* Center the container if there's extra space horizontally */
-            overflow: hidden; /* Optional: in case the container or canvas overflows */
+            height: 97vh;
+            margin: 0 auto;
+            overflow: hidden; 
+            border: .5vh solid white;
+            border-radius: 2vh;
         }
 
         #imageCanvas {
-            filter: blur(.5px); /* Adjust the px value to control the blur intensity */
+            filter: blur(.5px); 
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            overflow: hidden; 
+        }
+
+        #overlayCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #imageCanvas, #spriteCanvas {
+            width: 100%;
+            height: 100%;
         }
 
         canvas {
             position: absolute;
             top: 0;
             left: 0;
-            border: 1px solid #000;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -85,8 +112,6 @@
             window.location.reload();
         };
 
-
-
         // Initial loading of a random image, to ensure it's also random at the start
         currentImageIndex = Math.floor(Math.random() * images.length);
         loadImage(images[currentImageIndex]).then(img => {
@@ -105,10 +130,10 @@
             if (!dirtOverlayImage) {
                 loadImage(dirtOverlaySrc).then(img => {
                     dirtOverlayImage = img;
-                    overlayCtx.drawImage(dirtOverlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+                    overlayCtx.drawImage(dirtOverlayImage, 0, 0, imageCanvas.width, imageCanvas.height);
                 });
             } else {
-                overlayCtx.drawImage(dirtOverlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+                overlayCtx.drawImage(dirtOverlayImage, 0, 0, imageCanvas.width, imageCanvas.height);
             }
         };
 

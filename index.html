@@ -132,41 +132,41 @@
             //     moveCleaners(); // Start the cleaning process after a delay
             // }, 500);
 
-            // window.location.reload();
+            window.location.reload();
 
-            currentImageIndex = (currentImageIndex + 1) % images.length; // Move to the next image, loop back to the first after the last
-            loadImage(images[currentImageIndex]).then(img => {
-                imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height); // Clear the previous image
-                imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height); // Draw the new image
-            });
+            // currentImageIndex = (currentImageIndex + 1) % images.length; // Move to the next image, loop back to the first after the last
+            // loadImage(images[currentImageIndex]).then(img => {
+            //     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height); // Clear the previous image
+            //     imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height); // Draw the new image
+            // });
 
-            drawDirt(); // Redraw the dirt overlay
+            // drawDirt(); // Redraw the dirt overlay
             
-            // Optionally reset cleaner positions here if desired
-            for (let i = 0; i < numCleaners; i++) {
-                cleaners[i].x = Math.random() * (overlayCanvas.width - cleanerSize);
-                cleaners[i].y = Math.random() * (overlayCanvas.height - cleanerSize);
-                const direction = randomizeDirection(speed);
-                cleaners[i].dx = direction.dx;
-                cleaners[i].dy = direction.dy;
-            }
+            // // Optionally reset cleaner positions here if desired
+            // for (let i = 0; i < numCleaners; i++) {
+            //     cleaners[i].x = Math.random() * (overlayCanvas.width - cleanerSize);
+            //     cleaners[i].y = Math.random() * (overlayCanvas.height - cleanerSize);
+            //     const direction = randomizeDirection(speed);
+            //     cleaners[i].dx = direction.dx;
+            //     cleaners[i].dy = direction.dy;
+            // }
             
-            const newSpriteSheet = selectRandomSpriteSheet(); // Get a new random sprite sheet
-            loadImage(newSpriteSheet).then(img => {
-                cleanerSprite = img;
+            // const newSpriteSheet = selectRandomSpriteSheet(); // Get a new random sprite sheet
+            // loadImage(newSpriteSheet).then(img => {
+            //     cleanerSprite = img;
 
-                // Clear the sprite canvas to remove old sprites
-                spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+            //     // Clear the sprite canvas to remove old sprites
+            //     spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
 
-                // Redraw cleaners with the new sprite sheet
-                cleaners.forEach(cleaner => {
-                    // Assuming you're using a fixed source rectangle for simplicity
-                    // Adjust if your sprite animation logic is more complex
-                    const spriteX = 0; // If you want to animate, you'll need to adjust this based on frame
-                    const spriteY = getDirectionRow(cleaner.dy, cleaner.dx) * 48; // Adjust based on direction
-                    spriteCtx.drawImage(cleanerSprite, spriteX, spriteY, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
-                });
-            });
+            //     // Redraw cleaners with the new sprite sheet
+            //     cleaners.forEach(cleaner => {
+            //         // Assuming you're using a fixed source rectangle for simplicity
+            //         // Adjust if your sprite animation logic is more complex
+            //         const spriteX = 0; // If you want to animate, you'll need to adjust this based on frame
+            //         const spriteY = getDirectionRow(cleaner.dy, cleaner.dx) * 48; // Adjust based on direction
+            //         spriteCtx.drawImage(cleanerSprite, spriteX, spriteY, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+            //     });
+            // });
         };
 
 

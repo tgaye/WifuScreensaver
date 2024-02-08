@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Revealer</title>
+    <style>
+        #container {
+            position: relative;
+            width: 800px;
+            height: 800px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="imageCanvas" width="800" height="800"></canvas>
+        <canvas id="spriteCanvas" width="800" height="800" style="z-index: 2;"></canvas> <!-- New sprite canvas -->
+        <canvas id="overlayCanvas" width="800" height="800" style="z-index: 1;"></canvas>
+    </div>
+    
+    <script>
+        const imageCanvas = document.getElementById('imageCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const overlayCtx = overlayCanvas.getContext('2d');
+
+        const startPic = 1;
+        const endPic = 13;
+
+        const images = [];
+        for (let i = startPic; i <= endPic; i++) {
+            images.push(`${i}.jpg`);
+        }
+
+        const cleanerSpriteSrc  = ['cleaner1.png'];
+        const selectedImage = images[Math.floor(Math.random() * images.length)];
+
+        const cleanerSize = 95;
+        const speed = 1.1;
+        let cleaners = [];
+        const numCleaners = 5;
+
+        for (let i = 0; i < numCleaners; i++) {
+            const direction = randomizeDirection(speed);
+            cleaners.push({
+                x: Math.random() * (overlayCanvas.width - cleanerSize),
+                y: Math.random() * (overlayCanvas.height - cleanerSize),
+                dx: direction.dx,
+                dy: direction.dy
+            });
+        }
+
+        const loadImage = (src) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        };
+
+        let currentImageIndex = 0; // To keep track of the current image index
+
+        const switchImageAndResetDirt = () => {
+            currentImageIndex = (currentImageIndex + 1) % images.length; // Move to the next image, loop back to the first after the last
+            loadImage(images[currentImageIndex]).then(img => {
+                imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height); // Clear the previous image
+                imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height); // Draw the new image
+            });
+
+            drawDirt(); // Redraw the dirt overlay
+            
+            // Optionally reset cleaner positions here if desired
+            for (let i = 0; i < numCleaners; i++) {
+                cleaners[i].x = Math.random() * (overlayCanvas.width - cleanerSize);
+                cleaners[i].y = Math.random() * (overlayCanvas.height - cleanerSize);
+                const direction = randomizeDirection(speed);
+                cleaners[i].dx = direction.dx;
+                cleaners[i].dy = direction.dy;
+            }
+            
+            // Clear the sprite canvas to remove old sprites
+            spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+        };
+
+        // Start the initial cycle and setup the interval for switching
+        loadImage(images[currentImageIndex]).then(img => {
+            imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+            moveCleaners(); // Start the cleaning process
+        });
+
+        setInterval(switchImageAndResetDirt, 17000); // Switch image and reset dirt every 30000 milliseconds (30 seconds)
+
+
+        const drawDirt = () => {
+            overlayCtx.fillStyle = 'black';
+            overlayCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        };
+
+        drawDirt();
+
+    function randomAngleDirection() {
+        const angle = 45 + Math.random() * (120 - 45); // Random angle between 45 and 120 degrees
+        const radians = angle * (Math.PI / 180); // Convert to radians
+        return {
+            dx:  speed,
+            dy:  speed
+        };
+    }
+
+    let cleanerSprite; // Holds the cleaner sprite image once loaded
+    const spriteCtx = document.getElementById('spriteCanvas').getContext('2d');
+    let lastPositions = new Array(numCleaners).fill(null); // Initialize last positions for each cleaner
+
+
+    // Load the cleaner sprite as before
+    loadImage(cleanerSpriteSrc).then(img => {
+        cleanerSprite = img; // Save the loaded sprite for later use
+        moveCleaners(); // Ensure this is called after the sprite is loaded
+    });
+
+    const moveCleaners = () => {
+        // Clear only the previous sprite positions
+        lastPositions.forEach((pos, index) => {
+            if (pos) {
+                spriteCtx.clearRect(pos.x, pos.y, 120, 120); // Clear the area based on the sprite size
+            }
+        });
+
+        cleaners.forEach((cleaner, index) => {
+            // Calculate new position for cleaner
+            cleaner.x += cleaner.dx;
+            cleaner.y += cleaner.dy;
+
+            // Check for boundary collisions and adjust direction
+            let hitBoundary = false;
+            if (cleaner.x <= 0 || cleaner.x >= overlayCanvas.width - cleanerSize) {
+                hitBoundary = true;
+                cleaner.dx *= -1; // Reverse X direction
+                cleaner.dy = randomizeDirection(); // Randomize Y direction to prevent sticking to edges
+            }
+            if (cleaner.y <= 0 || cleaner.y >= overlayCanvas.height - cleanerSize) {
+                hitBoundary = true;
+                cleaner.dy *= -1; // Reverse Y direction
+                cleaner.dx = randomizeDirection(); // Randomize X direction to prevent sticking to edges
+            }
+
+            if (hitBoundary) {
+                const newDirection = randomizeDirection(speed);
+                cleaner.dx = newDirection.dx;
+                cleaner.dy = newDirection.dy;
+                
+                // Ensure the cleaner is within bounds
+                cleaner.x = Math.max(0, Math.min(overlayCanvas.width - cleanerSize, cleaner.x));
+                cleaner.y = Math.max(0, Math.min(overlayCanvas.height - cleanerSize, cleaner.y));
+            }
+
+            // Clear a circular path on the overlay canvas to show cleaning effect
+            overlayCtx.globalCompositeOperation = 'destination-out';
+            overlayCtx.beginPath();
+            overlayCtx.arc(cleaner.x + cleanerSize / 2, cleaner.y + cleanerSize / 2, cleanerSize / 2, 0, Math.PI * 2);
+            overlayCtx.fill();
+            overlayCtx.globalCompositeOperation = 'source-over'; // Reset composite operation
+
+            // Update lastPositions for the current cleaner
+            lastPositions[index] = { x: cleaner.x, y: cleaner.y };
+
+
+            // Inside your moveCleaners function or wherever you draw the sprites
+            const cleanerSpriteWidth = spriteCanvas.width * (8 / 100); // 8vh width in pixels
+            const cleanerSpriteHeight = spriteCanvas.height * (6 / 100); // 6vh height in pixels
+
+
+            // Draw the cleaner sprite at the new location
+            if (cleanerSprite) {
+                spriteCtx.drawImage(cleanerSprite, cleaner.x, cleaner.y, cleanerSpriteWidth, cleanerSpriteHeight);
+            }
+        });
+
+        requestAnimationFrame(moveCleaners);
+    };
+
+    // Adjust this function to generate dx and dy such that dx^2 + dy^2 = speed^2
+    function randomizeDirection(speed) {
+        const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+        return {
+            dx: Math.cos(angle) * speed,
+            dy: Math.sin(angle) * speed
+        };
+    }
+
+
+    // Load the cleaner sprite and start the animation after it's loaded
+    loadImage('cleaner1.png').then(img => {
+        cleanerSprite = img;
+        moveCleaners(); // Call moveCleaners here to ensure sprite is available
+    });
+
+    function resizeCanvas() {
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        // Assuming you want the canvas to be a square that fits within the viewport
+        const size = Math.min(viewportWidth, viewportHeight);
+
+        imageCanvas.width = size;
+        imageCanvas.height = size;
+        spriteCanvas.width = size;
+        spriteCanvas.height = size;
+        overlayCanvas.width = size;
+        overlayCanvas.height = size;
+    }
+
+    // Call resizeCanvas on load and when the window is resized
+    window.onload = resizeCanvas;
+    window.onresize = resizeCanvas;
+    </script>
+</body>
+</html>

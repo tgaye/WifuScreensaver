@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Revealer</title>
+    <style>
+        #container {
+            position: relative;
+            width: 100vh;
+            height: 100vh;
+            margin: 0 auto; /* Center the container if there's extra space horizontally */
+            overflow: hidden; /* Optional: in case the container or canvas overflows */
+        }
+
+        #imageCanvas {
+            filter: blur(.5px); /* Adjust the px value to control the blur intensity */
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="imageCanvas" width="800" height="800"></canvas>
+        <canvas id="spriteCanvas" width="800" height="800" style="z-index: 2;"></canvas> <!-- New sprite canvas -->
+        <canvas id="overlayCanvas" width="800" height="800" style="z-index: 1;"></canvas>
+    </div>
+    
+    <script>
+        const imageCanvas = document.getElementById('imageCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const imageCtx = imageCanvas.getContext('2d');
+        const overlayCtx = overlayCanvas.getContext('2d');
+
+        const dirtOverlaySrc = 'dirtoverlay.jpg';
+        let dirtOverlayImage;
+
+        const startPic = 1;
+        const endPic = 199;
+
+        const images = [];
+        for (let i = startPic; i <= endPic; i++) {
+            images.push(`./wifuPics/${i}.jpg`);
+        }
+
+        const spriteSheetSources = ['spritesheet1.png', 'spritesheet2.png', 'spritesheet3.png', 
+        'spritesheet4.png', 'spritesheet5.png', 'spritesheet6.png', 'spritesheet7.png', 
+        'spritesheet8.png', 'spritesheet9.png', 'spritesheet10.png', 'spreadsheet11.png',  'spreadsheet12.png']; // Add more as needed
+        const selectedImage = images[Math.floor(Math.random() * images.length)];
+
+        const cleanerSize = 105;
+        let speed = .9;
+        let cleaners = [];
+        const numCleaners = 5;
+
+        for (let i = 0; i < numCleaners; i++) {
+            const direction = randomizeDirection(speed);
+            cleaners.push({
+                x: Math.random() * (overlayCanvas.width - cleanerSize),
+                y: Math.random() * (overlayCanvas.height - cleanerSize),
+                dx: direction.dx,
+                dy: direction.dy,
+                animationFrame: 0,
+                direction: 'down',
+                startCleaningDelay: 100 // Half-second delay at 60 FPS
+            });
+        }
+
+        const loadImage = (src) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        };
+
+        let currentImageIndex = 0; // To keep track of the current image index
+
+        const switchImageAndResetDirt = () => {
+            // // Select a random background image index from the list
+            // currentImageIndex = Math.floor(Math.random() * images.length);
+            // // Pause the movement
+            // isMovementPaused = true;
+            
+            // // // Slow down the speed by 10%
+            // // speed *= 0.9;
+
+            // loadImage(images[currentImageIndex]).then(img => {
+            //     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+            //     imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+            // });
+
+            // drawDirt(); // Redraw the dirt overlay
+
+            // // Correctly select a new random sprite sheet for cleaners on reset
+            // const newSpriteSheet = selectRandomSpriteSheet(); // Get a new random sprite sheet
+            // loadImage(newSpriteSheet).then(img => {
+            //     cleanerSprite = img;
+
+            //     // Clear the sprite canvas to remove old sprites
+            //     spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+
+            //     // Redraw cleaners with the new sprite sheet
+            //     cleaners.forEach(cleaner => {
+            //         // Assuming you're using a fixed source rectangle for simplicity
+            //         // Adjust if your sprite animation logic is more complex
+            //         const spriteX = 0; // If you want to animate, you'll need to adjust this based on frame
+            //         const spriteY = getDirectionRow(cleaner.dy, cleaner.dx) * 48; // Adjust based on direction
+            //         spriteCtx.drawImage(cleanerSprite, spriteX, spriteY, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+            //     });
+            // });
+
+            // // Reset cleaner positions and recalculate dx and dy based on the consistent speed
+            // for (let i = 0; i < numCleaners; i++) {
+            //     cleaners[i].x = Math.random() * (overlayCanvas.width - cleanerSize);
+            //     cleaners[i].y = Math.random() * (overlayCanvas.height - cleanerSize);
+            //     let direction = randomizeDirection(speed); // Use the adjusted speed for recalculating direction
+            //     cleaners[i].dx = direction.dx;
+            //     cleaners[i].dy = direction.dy;
+            //     cleaners[i].startCleaningDelay = 100; // Reset the cleaning delay
+            // }
+
+            // // Add a delay before starting the cleaning process
+            // setTimeout(() => {
+            //     // Resume the movement
+            //     isMovementPaused = false;
+            //     moveCleaners(); // Start the cleaning process after a delay
+            // }, 500);
+
+            // window.location.reload();
+
+            currentImageIndex = (currentImageIndex + 1) % images.length; // Move to the next image, loop back to the first after the last
+            loadImage(images[currentImageIndex]).then(img => {
+                imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height); // Clear the previous image
+                imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height); // Draw the new image
+            });
+
+            drawDirt(); // Redraw the dirt overlay
+            
+            // Optionally reset cleaner positions here if desired
+            for (let i = 0; i < numCleaners; i++) {
+                cleaners[i].x = Math.random() * (overlayCanvas.width - cleanerSize);
+                cleaners[i].y = Math.random() * (overlayCanvas.height - cleanerSize);
+                const direction = randomizeDirection(speed);
+                cleaners[i].dx = direction.dx;
+                cleaners[i].dy = direction.dy;
+            }
+            
+            const newSpriteSheet = selectRandomSpriteSheet(); // Get a new random sprite sheet
+            loadImage(newSpriteSheet).then(img => {
+                cleanerSprite = img;
+
+                // Clear the sprite canvas to remove old sprites
+                spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+
+                // Redraw cleaners with the new sprite sheet
+                cleaners.forEach(cleaner => {
+                    // Assuming you're using a fixed source rectangle for simplicity
+                    // Adjust if your sprite animation logic is more complex
+                    const spriteX = 0; // If you want to animate, you'll need to adjust this based on frame
+                    const spriteY = getDirectionRow(cleaner.dy, cleaner.dx) * 48; // Adjust based on direction
+                    spriteCtx.drawImage(cleanerSprite, spriteX, spriteY, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+                });
+            });
+        };
+
+
+
+        // Initial loading of a random image, to ensure it's also random at the start
+        currentImageIndex = Math.floor(Math.random() * images.length);
+        loadImage(images[currentImageIndex]).then(img => {
+            imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+
+        setTimeout(() => {
+            moveCleaners(); // Start the cleaning process after a delay of 1.5 seconds
+          }, 500);        
+
+        });
+
+        setInterval(switchImageAndResetDirt, 17000); // Switch image and reset dirt every 30000 milliseconds (30 seconds)
+
+
+        const drawDirt = () => {
+            if (!dirtOverlayImage) {
+                loadImage(dirtOverlaySrc).then(img => {
+                    dirtOverlayImage = img;
+                    overlayCtx.drawImage(dirtOverlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+                });
+            } else {
+                overlayCtx.drawImage(dirtOverlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+            }
+        };
+
+
+        drawDirt();
+
+    function randomAngleDirection() {
+        const angle = 45 + Math.random() * (120 - 45); // Random angle between 45 and 120 degrees
+        const radians = angle * (Math.PI / 180); // Convert to radians
+        return {
+            dx:  speed,
+            dy:  speed
+        };
+    }
+
+    let cleanerSprite; // Holds the cleaner sprite image once loaded
+    const spriteCtx = document.getElementById('spriteCanvas').getContext('2d');
+    let lastPositions = new Array(numCleaners).fill(null); // Initialize last positions for each cleaner
+
+    // Function to select a random sprite sheet source
+    function selectRandomSpriteSheet() {
+        const index = Math.floor(Math.random() * spriteSheetSources.length);
+        return spriteSheetSources[index];
+    }
+
+    // Load the cleaner sprite
+    loadImage(selectRandomSpriteSheet()).then(img => {
+        cleanerSprite = img;
+        // Draw each cleaner sprite at its initial position using only the top-left 48x48 pixels of the sprite sheet
+        cleaners.forEach(cleaner => {
+            // Here we specify the source rectangle (0, 0, 48, 48) to crop the top-left 48x48 pixels
+            // And the destination rectangle (cleaner.x, cleaner.y, cleanerSize, cleanerSize) to draw the cropped image
+            spriteCtx.drawImage(cleanerSprite, 0, 0, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+        });
+        // Delay the start of their movement
+        setTimeout(() => {
+            moveCleaners(); // Now only responsible for moving the sprites
+          }, 500);
+    });
+
+    function getDirectionRow(dy, dx) {
+        // Assuming positive dy is downward, negative dy is upward,
+        // positive dx is rightward, and negative dx is leftward.
+        if (dy > 0) return 0; // Downward
+        if (dx < 0) return 1; // Left
+        if (dx > 0) return 2; // Right
+        if (dy < 0) return 3; // Upward
+        return 0; // Default to downward if no movement
+    }
+
+    const frameSwitchRate = 60; // Number of frames before switching sprites
+    const totalColumns = 3; // Total columns in the sprite sheet
+    const delayToRemoveDirt = 500; // Delay in milliseconds before starting to remove dirt
+    let isMovementPaused = false; // Flag to control the movement of cleaners
+
+    const moveCleaners = () => {
+        if (!isMovementPaused) {
+        spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height); // Clear the sprite canvas
+            console.log("speed: " + speed);
+
+        cleaners.forEach(cleaner => {
+            // Update position
+            cleaner.x += cleaner.dx;
+            cleaner.y += cleaner.dy;
+
+            // Boundary collision detection and handling
+            if (cleaner.x <= 0 || cleaner.x >= overlayCanvas.width - cleanerSize) {
+                cleaner.dx *= -1;
+            }
+            if (cleaner.y <= 0 || cleaner.y >= overlayCanvas.height - cleanerSize) {
+                cleaner.dy *= -1;
+            }
+
+            // Update cleaner's direction based on movement
+            cleaner.direction = getDirectionRow(cleaner.dy, cleaner.dx);
+            
+            // Update animation frame for walking effect
+            cleaner.animationFrame = (cleaner.animationFrame + 1) % (totalColumns * frameSwitchRate);
+            const column = Math.floor(cleaner.animationFrame / frameSwitchRate);
+            const spriteX = column * 48; // Calculate X coordinate based on current column
+            const spriteY = cleaner.direction * 48; // Calculate Y coordinate based on direction
+
+            // Draw the cleaner sprite with walking animation
+            if (cleanerSprite) {
+                spriteCtx.drawImage(cleanerSprite, spriteX, spriteY, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+            }
+
+            if (cleaner.startCleaningDelay > 0) {
+            // Still waiting, decrement the delay
+            cleaner.startCleaningDelay -= 1; 
+            } else {
+
+            // Create a feathered path on the overlay canvas
+            const radius = cleanerSize / 1.5;
+            const feather = 60; // Adjust for feather size
+            const x = cleaner.x + cleanerSize / 2;
+            const y = cleaner.y + cleanerSize / 2;
+
+            // Create radial gradient
+            const gradient = overlayCtx.createRadialGradient(x, y, radius - feather, x, y, radius);
+            gradient.addColorStop(0, 'rgba(0,0,0,1)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+            overlayCtx.globalCompositeOperation = 'destination-out';
+            overlayCtx.fillStyle = gradient;
+            overlayCtx.beginPath();
+            overlayCtx.arc(x, y, radius, 0, Math.PI * 2);
+            overlayCtx.fill();
+            overlayCtx.globalCompositeOperation = 'source-over';
+                
+            }
+
+        });
+        }
+
+        requestAnimationFrame(moveCleaners);
+    };
+
+
+    // Adjust this function to generate dx and dy such that dx^2 + dy^2 = speed^2
+    function randomizeDirection(speed) {
+        const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+        return {
+            dx: Math.cos(angle) * speed,
+            dy: Math.sin(angle) * speed
+        };
+    }
+
+
+    // Load the cleaner sprite
+    loadImage(selectRandomSpriteSheet()).then(img => {
+        cleanerSprite = img;
+        // Draw each cleaner sprite at its initial position using only the top-left 48x48 pixels of the sprite sheet
+        cleaners.forEach(cleaner => {
+            // Here we specify the source rectangle (0, 0, 48, 48) to crop the top-left 48x48 pixels
+            // And the destination rectangle (cleaner.x, cleaner.y, cleanerSize, cleanerSize) to draw the cropped image
+            spriteCtx.drawImage(cleanerSprite, 0, 0, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+        });
+        // Delay the start of their movement
+        setTimeout(() => {
+            moveCleaners(); // Now only responsible for moving the sprites
+          }, 500);
+    });
+
+    </script>
+</body>
+</html>

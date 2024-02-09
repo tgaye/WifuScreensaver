@@ -84,6 +84,9 @@
         let cleaners = [];
         const numCleaners = 5;
 
+        const delayBetweenCleaners = 200; // Delay between each cleaner start
+        let currentDelay = 0;
+
         for (let i = 0; i < numCleaners; i++) {
             const direction = randomizeDirection(speed);
             cleaners.push({
@@ -93,8 +96,10 @@
                 dy: direction.dy,
                 animationFrame: 0,
                 direction: 'down',
-                startCleaningDelay: 100 // Half-second delay at 60 FPS
+                startCleaningDelay: currentDelay // Set the start delay for each cleaner
             });
+
+            currentDelay += delayBetweenCleaners; // Increment the delay for the next cleaner
         }
 
         const loadImage = (src) => {
@@ -196,8 +201,15 @@
 
         cleaners.forEach(cleaner => {
             // Update position
-            cleaner.x += cleaner.dx;
-            cleaner.y += cleaner.dy;
+
+            if (cleaner.startCleaningDelay <= 0) {
+                cleaner.x += cleaner.dx;
+                cleaner.y += cleaner.dy;
+
+                 // Update cleaner's direction based on movement
+                cleaner.direction = getDirectionRow(cleaner.dy, cleaner.dx);
+            }
+
 
             // Boundary collision detection and handling
             if (cleaner.x <= 0 || cleaner.x >= overlayCanvas.width - cleanerSize) {

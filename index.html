@@ -114,8 +114,43 @@
 
         let currentImageIndex = 0; // To keep track of the current image index
 
-        const switchImageAndResetDirt = () => {
-            window.location.reload();
+        const switchImageAndResetDirt = async () => {
+            // Pause cleaner movement
+            isMovementPaused = true;
+
+            // Wait for the new image to load
+            try {
+                const img = await loadImage(images[(currentImageIndex + 1) % images.length]);
+                imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+                imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+                currentImageIndex = (currentImageIndex + 1) % images.length; // Update image index after loading
+                
+                // Ensure the dirt overlay image is reloaded or redrawn correctly
+                const dirtImg = await loadImage(dirtOverlaySrc);
+                dirtOverlayImage = dirtImg;
+                overlayCtx.drawImage(dirtOverlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+
+                // Reset cleaner positions and directions, and clear the sprite canvas after the images have been updated
+                cleaners.forEach((cleaner, index) => {
+                    cleaner.x = Math.random() * (overlayCanvas.width - cleanerSize);
+                    cleaner.y = Math.random() * (overlayCanvas.height - cleanerSize);
+                    const direction = randomizeDirection(speed);
+                    cleaner.dx = direction.dx;
+                    cleaner.dy = direction.dy;
+                    cleaner.animationFrame = 0; // Reset animation frame
+                    cleaner.startCleaningDelay = index * delayBetweenCleaners; // Reapply initial delay
+                });
+
+                spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+
+            } catch (error) {
+                console.error("Failed to load image or dirt overlay", error);
+            }
+
+            // Resume cleaner movement after the delay
+            setTimeout(() => {
+                isMovementPaused = false;
+            }, 500); // Adjust this delay as needed
         };
 
         // Initial loading of a random image, to ensure it's also random at the start

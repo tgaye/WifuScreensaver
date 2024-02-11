@@ -141,7 +141,15 @@
                     cleaner.startCleaningDelay = index * delayBetweenCleaners; // Reapply initial delay
                 });
 
+                // Clear the sprite canvas
                 spriteCtx.clearRect(0, 0, spriteCanvas.width, spriteCanvas.height);
+
+                // Load a new sprite sheet for the cleaners
+                cleanerSprite = await loadImage(selectRandomSpriteSheet());
+                // Redraw each cleaner sprite with the new sprite sheet
+                cleaners.forEach(cleaner => {
+                    spriteCtx.drawImage(cleanerSprite, 0, 0, 48, 48, cleaner.x, cleaner.y, cleanerSize, cleanerSize);
+                });
 
             } catch (error) {
                 console.error("Failed to load image or dirt overlay", error);
